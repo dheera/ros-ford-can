@@ -1,0 +1,57 @@
+#!/usr/bin/env python3
+import time
+import rospy
+from fordcan import FordCAN
+
+from std_msgs.msg import *
+
+def on_steering_wheel_angle(value):
+    m = Float32()
+    m.data = value
+    pub_steering_wheel_angle.publish(m)
+
+def on_rpm(value):
+    m = Float32()
+    m.data = value
+    pub_rpm.publish(m)
+
+def on_speed(value):
+    m = Float32()
+    m.data = value
+    pub_speed.publish(m)
+
+def on_brake_pressure(value):
+    m = Float32()
+    m.data = value
+    pub_brake_pressure.publish(m)
+
+def on_ignition_switch(value):
+    m = Int8()
+    m.data = value
+    pub_ignition_switch.publish(m)
+
+if __name__ == "__main__":
+    rospy.init_node('ford_can_node')
+
+    param_channel = rospy.get_param("~channel", "can0")
+    param_bustype = rospy.get_param("~bustype", "socketcan_native")
+
+    f = FordCAN(channel = param_channel, bustype = param_bustype)
+    f.start()
+
+    pub_steering_wheel_angle = rospy.Publisher("steering_wheel_angle", Float32, queue_size = 1)
+    pub_speed = rospy.Publisher("speed", Float32, queue_size = 1)
+    pub_brake_pressure = rospy.Publisher("brake_pressure", Float32, queue_size = 1)
+    pub_rpm = rospy.Publisher("rpm", Float32, queue_size = 1)
+    pub_ignition_switch = rospy.Publisher("ignition_switch", Int8, queue_size = 1)
+
+    f.on_steering_wheel_angle = on_steering_wheel_angle
+    f.on_rpm = on_rpm
+    f.on_speed = on_speed
+    f.on_brake_pressure = on_brake_pressure
+    f.on_ignition_switch = on_ignition_switch
+
+    rospy.init_node('ford_can_node')
+
+    rospy.spin()
+    f.stop()
