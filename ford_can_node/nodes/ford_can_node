@@ -1,0 +1,39 @@
+#!/usr/bin/env python3
+import time
+import rospy
+from fordcan import FordCAN
+
+from std_msgs.msg import *
+
+def on_steering_wheel_angle(value):
+    m = Float32()
+    m.data = value
+    pub_steering_wheel_angle.publish(m)
+
+def on_rpm(value):
+    m = Float32()
+    m.data = value
+    pub_rpm.publish(m)
+
+def on_speed(value):
+    m = Float32()
+    m.data = value
+    pub_speed.publish(m)
+
+if __name__ == "__main__":
+    rospy.init_node('ford_can_node')
+
+    f = FordCAN()
+    f.start()
+
+    pub_steering_wheel_angle = rospy.Publisher("steering_wheel_angle", Float32, queue_size = 1)
+    pub_speed = rospy.Publisher("speed", Float32, queue_size = 1)
+    pub_rpm = rospy.Publisher("rpm", Float32, queue_size = 1)
+
+    f.on_steering_wheel_angle = on_steering_wheel_angle
+    f.on_rpm = on_rpm
+    f.on_speed = on_speed
+
+    rospy.init_node('ford_can_node')
+
+    rospy.spin()
