@@ -1,4 +1,4 @@
-# ROS package to bag data from Ford vehicles over CANbus
+# ROS Ford reader
 
 This bags a number of variables potential useful for machine learning model training from a Ford car. Tested on a Focus 2015. Untested on other cars (please help).
 
