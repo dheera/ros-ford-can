@@ -20,6 +20,16 @@ def on_speed(value):
     m.data = value
     pub_speed.publish(m)
 
+def on_brake_pressure(value):
+    m = Float32()
+    m.data = value
+    pub_brake_pressure.publish(m)
+
+def on_ignition_switch(value):
+    m = Int8()
+    m.data = value
+    pub_ignition_switch.publish(m)
+
 if __name__ == "__main__":
     rospy.init_node('ford_can_node')
 
@@ -28,11 +38,15 @@ if __name__ == "__main__":
 
     pub_steering_wheel_angle = rospy.Publisher("steering_wheel_angle", Float32, queue_size = 1)
     pub_speed = rospy.Publisher("speed", Float32, queue_size = 1)
+    pub_brake_pressure = rospy.Publisher("brake_pressure", Float32, queue_size = 1)
     pub_rpm = rospy.Publisher("rpm", Float32, queue_size = 1)
+    pub_ignition_switch = rospy.Publisher("ignition_switch", Int8, queue_size = 1)
 
     f.on_steering_wheel_angle = on_steering_wheel_angle
     f.on_rpm = on_rpm
     f.on_speed = on_speed
+    f.on_brake_pressure = on_brake_pressure
+    f.on_ignition_switch = on_ignition_switch
 
     rospy.init_node('ford_can_node')
 
