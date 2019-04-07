@@ -1,6 +1,6 @@
 # ROS Ford reader
 
-This bags a number of variables potential useful for machine learning model training from a Ford car. Tested on a Focus 2015. Untested on other cars (please help).
+This reads a number of variables potential useful for machine learning model training from a Ford car. Tested on a Focus 2015. Untested on other cars (please help).
 
 Requires a proper CANbus interface (e.g. Jetson TX2, Xavier, or USB-CAN adapter) connected to HS-CAN on the OBD port. This will NOT work with ELM327 or other serial "AT command" devices.
 
