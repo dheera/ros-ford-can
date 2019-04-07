@@ -33,8 +33,11 @@ msg_query_ignition_switch = can.Message(arbitration_id = BC_QUERY,
 class FordCAN(object):
     def __init__(self, channel = 'can0', bustype = 'socketcan_native'):
         self.bus = can.interface.Bus(channel=channel, bustype=bustype)
+        self.request_stop = False
 
     def start(self):
+        self.request_stop = False
+
         self.thread_input = threading.Thread(target = self._input_loop)
         self.thread_input.daemon = True
         self.thread_input.start()
@@ -42,20 +45,19 @@ class FordCAN(object):
         self.thread_output.daemon = True
         self.thread_output.start()
 
-        self.steering_wheel_angle = 0.0, 0
+        # callbacks to be overriden
         self.on_steering_wheel_angle = lambda x: 0
-        self.speed = 0.0, 0
         self.on_speed = lambda x: 0
-        self.brake_pressure = 0.0, 0
         self.on_brake_pressure = lambda x: 0
-        self.rpm = 0.0, 0
         self.on_rpm = lambda x: 0
-        self.ignition_switch = 0.0, 0
         self.on_ignition_switch = lambda x: 0
+
+    def stop(self):
+        self.request_stop = True
 
     def _output_loop(self):
         i = 0
-        while True:
+        while not self.request_stop:
             time.sleep(0.01)
             i += 1
             try:
@@ -76,14 +78,18 @@ class FordCAN(object):
                 continue
 
     def _input_loop(self):
-        while True:
-            message = self.bus.recv()
-            if message.arbitration_id == ECU_RESPONSE:
-               self._process_ecu(message.data)
-            elif message.arbitration_id == ABS_RESPONSE:
-               self._process_abs(message.data)
-            elif message.arbitration_id == BC_RESPONSE:
-               self._process_bc(message.data)
+        while not self.request_stop:
+            try:
+                message = self.bus.recv()
+                if message.arbitration_id == ECU_RESPONSE:
+                   self._process_ecu(message.data)
+                elif message.arbitration_id == ABS_RESPONSE:
+                   self._process_abs(message.data)
+                elif message.arbitration_id == BC_RESPONSE:
+                   self._process_bc(message.data)
+            except can.CanError:
+                print("can error")
+                continue
      
     def _process_ecu(self, data):
         if data[0:4] == b'\x05\x62\xf4\x0c':
