@@ -39,7 +39,11 @@ msg_query_total_distance = can.Message(arbitration_id = ECU_QUERY,
 
 class FordCAN(object):
     def __init__(self, channel = 'can0', bustype = 'socketcan_native'):
-        self.bus = can.interface.Bus(channel=channel, bustype=bustype)
+        self.bus = can.interface.Bus(channel=channel, bustype=bustype, can_filters = [
+          {"can_id": ECU_RESPONSE, "can_mask": 0x7F, "extended": False},    
+          {"can_id": ABS_RESPONSE, "can_mask": 0x7F, "extended": False},    
+          {"can_id": BC_RESPONSE, "can_mask": 0x7F, "extended": False},    
+        ])
         self.request_stop = False
 
     def start(self):
