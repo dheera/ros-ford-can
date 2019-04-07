@@ -3,12 +3,11 @@ import time
 import threading
 
 ECU_QUERY = 0x7e0 # ecu
-ECU_RESPONSE = OBD_QUERY + 8
+ECU_RESPONSE = ECU_QUERY + 8
 ABS_QUERY = 0x760 # anti-lock brake system
 ABS_RESPONSE = ABS_QUERY + 8
 BC_QUERY = 0x760 # body control
 BC_RESPONSE = BC_QUERY + 8
-
 
 msg_query_rpm = can.Message(arbitration_id = ECU_QUERY,
             data=[0x03, 0x22, 0xF4, 0x0C, 0x55, 0x55, 0x55, 0x55,],
@@ -22,12 +21,20 @@ msg_query_brake_pressure = can.Message(arbitration_id = ABS_QUERY,
             data=[0x03, 0x22, 0x20, 0x34, 0x55, 0x55, 0x55, 0x55,],
             extended_id=False)
 
+msg_query_accelerator_fraction = can.Message(arbitration_id = ECU_QUERY,
+            data=[0x03, 0x22, 0x03, 0x2b, 0x55, 0x55, 0x55, 0x55,],
+            extended_id=False)
+
 msg_query_steering_angle = can.Message(arbitration_id = ABS_QUERY,
               data=[0x03, 0x22, 0x33, 0x02, 0x55, 0x55, 0x55, 0x55,],
               extended_id=False)
 
 msg_query_ignition_switch = can.Message(arbitration_id = BC_QUERY,
               data=[0x03, 0x22, 0x41, 0x1f, 0x55, 0x55, 0x55, 0x55,],
+              extended_id=False)
+
+msg_query_total_distance = can.Message(arbitration_id = ECU_QUERY,
+              data=[0x03, 0x22, 0xdd, 0x01, 0x55, 0x55, 0x55, 0x55,],
               extended_id=False)
 
 class FordCAN(object):
@@ -47,9 +54,11 @@ class FordCAN(object):
 
         # callbacks to be overriden
         self.on_steering_wheel_angle = lambda x: 0
-        self.on_speed = lambda x: 0
+        self.on_accelerator_fraction = lambda x: 0
         self.on_brake_pressure = lambda x: 0
         self.on_rpm = lambda x: 0
+        self.on_speed = lambda x: 0
+        self.on_total_distance = lambda x: 0
         self.on_ignition_switch = lambda x: 0
 
     def stop(self):
@@ -63,16 +72,25 @@ class FordCAN(object):
             try:
                 self.bus.send(msg_query_steering_angle)
                 time.sleep(0.001)
-                if i % 3 == 0:
+                if i % 4 == 0:
                     self.bus.send(msg_query_rpm)
                     time.sleep(0.001)
-                if i % 3 == 1:
+                if i % 4 == 1:
                     self.bus.send(msg_query_speed)
                     time.sleep(0.001)
-                if i % 3 == 2:
+                if i % 4 == 2:
                     self.bus.send(msg_query_brake_pressure)
+                    time.sleep(0.001)
+                if i % 4 == 3:
+                    self.bus.send(msg_query_accelerator_fraction)
+                    time.sleep(0.001)
                 if i % 20 == 0:
                     self.bus.send(msg_query_ignition_switch)
+                    time.sleep(0.001)
+                if i % 100 == 0:
+                    self.bus.send(msg_query_total_distance)
+                    time.sleep(0.001)
+
             except can.CanError:
                 print("can error")
                 continue
@@ -98,6 +116,12 @@ class FordCAN(object):
         elif data[0:4] == b'\x05\x62\x15\x05':
             speed = int.from_bytes(data[4:6], "big") / 128.0
             self.on_speed(speed)
+        elif data[0:4] == b'\x05\x62\xdd\x01':
+            total_distance = int.from_bytes(data[4:6], "big") / 1.0
+            self.on_total_distance(total_distance)
+        elif data[0:4] == b'\x04\x62\x03\x2b':
+            accelerator_fraction = int.from_bytes(data[4], "big") / 255.0
+            self.on_accelerator_fraction(accelerator_fraction)
         
     def _process_abs(self, data):
         if data[0:4] == b'\x05\x62\x33\x02':
