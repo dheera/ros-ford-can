@@ -8,10 +8,10 @@ ABS_QUERY = 0x760 # anti-lock brake system
 ABS_RESPONSE = ABS_QUERY + 8
 BC_QUERY = 0x726 # body control
 BC_RESPONSE = BC_QUERY + 8
-
-msg_query_rpm = can.Message(arbitration_id = ECU_QUERY,
-            data=[0x03, 0x22, 0xF4, 0x0C, 0x55, 0x55, 0x55, 0x55,],
-            extended_id=False)
+API_QUERY = 0x7d0 # accesory protocol interface
+API_RESPONSE = API_QUERY + 8
+SAS_QUERY = 0x797 # steering angle sensor
+SAS_RESPONSE = API_QUERY + 8
 
 msg_query_rpm = can.Message(arbitration_id = ECU_QUERY,
             data=[0x02, 0x01, 0x0c, 0x55, 0x55, 0x55, 0x55, 0x55,],
@@ -41,15 +41,26 @@ msg_query_total_distance = can.Message(arbitration_id = ECU_QUERY,
               data=[0x03, 0x22, 0xdd, 0x01, 0x55, 0x55, 0x55, 0x55,],
               extended_id=False)
 
+msg_query_gps = can.Message(arbitration_id = API_QUERY,
+              data=[0x03, 0x22, 0x80, 0x12, 0x55, 0x55, 0x55, 0x55,],
+              extended_id=False)
+
+msg_query_gps_flow = can.Message(arbitration_id = API_QUERY,
+            data=[0x30, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,],
+            extended_id=False)
+
 class FordCAN(object):
     def __init__(self, channel = 'can0', bustype = 'socketcan_native'):
         self.bus = can.interface.Bus(channel=channel, bustype=bustype, can_filters = [
           {"can_id": ECU_RESPONSE, "can_mask": 0x7F, "extended": False},    
           {"can_id": ABS_RESPONSE, "can_mask": 0x7F, "extended": False},    
           {"can_id": BC_RESPONSE, "can_mask": 0x7F, "extended": False},    
+          {"can_id": API_RESPONSE, "can_mask": 0x7F, "extended": False},    
         ])
         self.request_stop = False
         self.is_running = False
+
+        self.frame_api = 0
 
         # callbacks to be overriden
         self.on_steering_wheel_angle = lambda x: 0
@@ -59,6 +70,7 @@ class FordCAN(object):
         self.on_speed = lambda x: 0
         self.on_total_distance = lambda x: 0
         self.on_ignition_switch = lambda x: 0
+        self.on_gps = lambda x: 0
 
     def start(self):
         self.request_stop = False
@@ -105,6 +117,11 @@ class FordCAN(object):
                 if i % 8 == 7:
                     self.bus.send(msg_query_total_distance)
                     time.sleep(0.002)
+                if i % 16 == 1:
+                    time.sleep(0.002)
+                    self.bus.send(msg_query_gps)
+                    time.sleep(0.002)
+                    self.bus.send(msg_query_gps_flow)
 
             except can.CanError:
                 print("can error")
@@ -121,6 +138,8 @@ class FordCAN(object):
                    self._process_abs(message.data)
                 elif message.arbitration_id == BC_RESPONSE:
                    self._process_bc(message.data)
+                elif message.arbitration_id == API_RESPONSE:
+                   self._process_api(message.data)
             except can.CanError:
                 print("can error")
                 continue
@@ -154,6 +173,15 @@ class FordCAN(object):
         elif data[0:4] == b'\x05\x62\x20\x34':
             brake_pressure = int.from_bytes(data[4:6], "big", signed = True) * 30.0
             self.on_brake_pressure(brake_pressure)
+
+    def _process_api(self, data):
+        if data[0:5] == b'\x10\x12\x62\x80\x12':
+            self.frame_api = 1
+        if self.frame_api == 1 and data[0] == 0x21:
+            lat = int.from_bytes(data[2:4], "big", signed=True) / 60.0
+            lon = int.from_bytes(data[6:8], "big", signed=True) / 60.0
+            self.on_gps((lat, lon))
+        return
 
     def _process_bc(self, data):
         if data[0:4] == b'\x04\x62\x41\x1f':

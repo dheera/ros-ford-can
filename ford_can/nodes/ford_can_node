@@ -4,6 +4,14 @@ import rospy
 from fordcan import FordCAN
 
 from std_msgs.msg import *
+from sensor_msgs.msg import *
+
+def on_gps(value):
+    lat, lon = value
+    m = NavSatFix()
+    m.latitude = lat
+    m.longitude = lon
+    pub_gps.publish(m)
 
 def on_accelerator_fraction(value):
     m = Float32()
@@ -52,6 +60,7 @@ if __name__ == "__main__":
 
     pub_accelerator_fraction = rospy.Publisher("accelerator_fraction", Float32, queue_size = 1)
     pub_brake_pressure = rospy.Publisher("brake_pressure", Float32, queue_size = 1)
+    pub_gps = rospy.Publisher("gps/fix", NavSatFix, queue_size = 1)
     pub_ignition_switch = rospy.Publisher("ignition_switch", Int8, queue_size = 1)
     pub_rpm = rospy.Publisher("rpm", Float32, queue_size = 1)
     pub_speed = rospy.Publisher("speed", Float32, queue_size = 1)
@@ -60,6 +69,7 @@ if __name__ == "__main__":
 
     f.on_accelerator_fraction = on_accelerator_fraction
     f.on_brake_pressure = on_brake_pressure
+    f.on_gps = on_gps
     f.on_ignition_switch = on_ignition_switch
     f.on_rpm = on_rpm
     f.on_speed = on_speed
