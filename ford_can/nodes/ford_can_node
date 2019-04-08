@@ -6,7 +6,7 @@ from fordcan import FordCAN
 from std_msgs.msg import *
 
 def on_accelerator_fraction(value):
-    m = Int8()
+    m = Float32()
     m.data = value
     pub_accelerator_fraction.publish(m)
 
@@ -67,5 +67,7 @@ if __name__ == "__main__":
     f.on_total_distance = on_total_distance
 
     rospy.init_node('ford_can_node')
-    rospy.spin()
+    rate = rospy.Rate(2)
+    while not rospy.is_shutdown() and f.is_running:
+        rate.sleep()
     f.stop()
