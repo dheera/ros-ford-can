@@ -82,27 +82,27 @@ class FordCAN(object):
     def _output_loop(self):
         i = 0
         while not self.request_stop:
-            time.sleep(0.01)
+            time.sleep(0.005)
             i += 1
             try:
                 self.bus.send(msg_query_steering_angle)
-                time.sleep(0.002)
+                time.sleep(0.005)
                 if i % 4 == 0:
-                    self.bus.send(msg_query_rpm)
-                    time.sleep(0.002)
-                if i % 4 == 1:
                     self.bus.send(msg_query_speed)
                     time.sleep(0.002)
                 if i % 4 == 2:
                     self.bus.send(msg_query_brake_pressure)
                     time.sleep(0.002)
-                if i % 4 == 3:
+                if i % 8 == 1:
+                    self.bus.send(msg_query_rpm)
+                    time.sleep(0.002)
+                if i % 8 == 3:
                     self.bus.send(msg_query_accelerator_fraction)
                     time.sleep(0.002)
-                if i % 21 == 0:
+                if i % 8 == 5:
                     self.bus.send(msg_query_ignition_switch)
                     time.sleep(0.002)
-                if i % 99 == 0:
+                if i % 8 == 7:
                     self.bus.send(msg_query_total_distance)
                     time.sleep(0.002)
 
