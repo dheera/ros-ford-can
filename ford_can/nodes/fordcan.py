@@ -140,8 +140,8 @@ class FordCAN(object):
         elif data[0:4] == b'\x05\x62\x15\x05':
             speed = int.from_bytes(data[4:6], "big") / 128.0
             self.on_speed(speed)
-        elif data[0:4] == b'\x05\x62\xdd\x01':
-            total_distance = int.from_bytes(data[4:6], "big") / 1.0
+        elif data[0:4] == b'\x06\x62\xdd\x01':
+            total_distance = int.from_bytes(data[4:7], "big") / 1.0
             self.on_total_distance(total_distance)
         elif data[0:4] == b'\x04\x62\x03\x2b':
             accelerator_fraction = data[4] / 255.0

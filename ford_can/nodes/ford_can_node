@@ -36,7 +36,7 @@ def on_steering_wheel_angle(value):
     pub_steering_wheel_angle.publish(m)
 
 def on_total_distance(value):
-    m = Int8()
+    m = Float32()
     m.data = value
     pub_total_distance.publish(m)
 
