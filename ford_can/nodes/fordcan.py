@@ -71,6 +71,7 @@ class FordCAN(object):
         self.on_total_distance = lambda x: 0
         self.on_ignition_switch = lambda x: 0
         self.on_gps = lambda x: 0
+        self.on_heading = lambda x: 0
 
     def start(self):
         self.request_stop = False
@@ -181,6 +182,9 @@ class FordCAN(object):
             lat = int.from_bytes(data[2:4], "big", signed=True) / 60.0
             lon = int.from_bytes(data[6:8], "big", signed=True) / 60.0
             self.on_gps((lat, lon))
+        if self.frame_api == 1 and data[0] == 0x22:
+            heading = int.from_bytes(data[4:6], "big") / 1.0
+            self.on_heading(heading)
         return
 
     def _process_bc(self, data):
