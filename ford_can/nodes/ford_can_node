@@ -49,6 +49,7 @@ def on_rpm(value):
 last_speed = 0.0
 last_speed_time = 0
 def on_speed(value):
+    global last_speed, last_speed_time
     m = Float32()
     last_speed = m.data
     last_speed_time = time.time()
