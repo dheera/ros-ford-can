@@ -20,6 +20,7 @@ include_directories(
 catkin_install_python(PROGRAMS
   nodes/ford_can_node
   nodes/fordcan.py
+  nodes/transformations.py
   DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )
 
